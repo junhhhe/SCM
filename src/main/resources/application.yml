@@ -1,0 +1,70 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/scm_db
+    username: root
+    password: dongyang
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    properties:
+      hibernate:
+        format_sql: true
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    show_sql: true
+    format-sql: true
+
+  jwt:
+    expiration_time: 86400000 #1?
+    secret: fgrohegRGHIEOVNLDREfklgRGf23534tfjhdfuioewohidffhhgs357GFHDRHSRT56erHertggerhrghRTHEYR568654kjfthtrdrthgfGHR3564u553yDHSRTHrtsrfgsrtsd
+
+logging:
+  level:
+    org.hibernate: WARN
+    org.hibernate.orm.connections.pooling: WARN
+
+server:
+  port: 8003
+
+springdoc:
+  swagger-ui:
+    # swagger-ui ?? ??. default ?? /swagger-ui.html??.
+    path:
+
+    # ? API? ?? ?? ??
+    # path, query, body, response ??? ??
+    groups-order: DESC
+
+    # ?? ?? ??.
+    # alpha: ??? ? ??
+    # method: OpenAPI specification file? ??? ?? ?? ?? ?? ??
+    tags-sorter: alpha
+
+    # ???? ?? ??.
+    # method? delete - get - patch - post - put ??? ????.
+    # alpha? ??? ??? ??? ??? ? ??.
+    operations-sorter: method
+
+    # swagger-ui default url? petstore html? ???? ??
+    disable-swagger-default-url: true
+
+    # swagger-ui?? try ?? ? request duration? ???? ??
+    display-request-duration: true
+
+  # openAPI ?? ??. default ?? /v3/api-docs ??.
+  api-docs:
+    path: /api-docs
+
+  # Spring Actuator? endpoint?? ??? ????
+  show-actuator: true
+
+  # request media type ? ?? ?
+  default-consumes-media-type: application/json
+
+  # response media type ? ?? ?
+  default-produces-media-type: application/json
+
+  # ?? ??? ???? controller? swagger-ui? ????.
+  paths-to-match:
+    - /api/**
