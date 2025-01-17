@@ -2,6 +2,7 @@ package FBI.scm.config;
 
 import FBI.scm.jwt.*;
 import FBI.scm.repository.RefreshTokenRepository;
+import FBI.scm.service.MemberService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -42,7 +43,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationConfiguration authenticationConfiguration) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationConfiguration authenticationConfiguration, MemberService memberService) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -54,8 +55,8 @@ public class SecurityConfig {
                 )
                 .addFilterAt(new JwtLoginFilter(authenticationManager(authenticationConfiguration), jwtUtil, objectMapper), UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(new JwtRequestFilter(jwtUtil), JwtLoginFilter.class)
-                .addFilterAt(new JwtLogoutFilter(jwtUtil, refreshTokenRepository), LogoutFilter.class)
-                .addFilterBefore(new JwtExceptionHandlingFilter(objectMapper), JwtLogoutFilter.class);
+                .addFilterAt(new JwtLogoutFilter(memberService), LogoutFilter.class)
+                .addFilterBefore(new JwtExceptionHandlingFilter(objectMapper), JwtRequestFilter.class);
 
         return http.build();
     }

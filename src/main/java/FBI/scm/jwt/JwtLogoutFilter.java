@@ -1,7 +1,6 @@
 package FBI.scm.jwt;
 
-import FBI.scm.repository.RefreshTokenRepository;
-import io.jsonwebtoken.JwtException;
+import FBI.scm.service.MemberService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
@@ -16,48 +15,29 @@ import java.io.IOException;
 
 public class JwtLogoutFilter extends GenericFilterBean {
 
-    private static final String REFRESH_TOKEN = "REFRESH_TOKEN";
-
-    private final JwtUtil jwtUtil;
-    private final RefreshTokenRepository refreshRepository;
     private final RequestMatcher logoutRequestMatcher;
+    private final MemberService memberService;
 
-    public JwtLogoutFilter(JwtUtil jwtUtil, RefreshTokenRepository refreshRepository) {
-        this.jwtUtil = jwtUtil;
-        this.refreshRepository = refreshRepository;
+    public JwtLogoutFilter(MemberService memberService) {
         this.logoutRequestMatcher = new AntPathRequestMatcher("/api/v1/member/logout", "POST");
+        this.memberService = memberService;
     }
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-        doFilter((HttpServletRequest) request, (HttpServletResponse) response, chain);
-    }
+        HttpServletRequest httpRequest = (HttpServletRequest) request;
+        HttpServletResponse httpResponse = (HttpServletResponse) response;
 
-    private void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException, ServletException {
-        if (!logoutRequestMatcher.matches(request)) {
-            filterChain.doFilter(request, response);
+        if (!logoutRequestMatcher.matches(httpRequest)) {
+            chain.doFilter(request, response);
             return;
         }
 
-        String refresh = request.getHeader(REFRESH_TOKEN);
-        if (refresh == null || refresh.trim().isEmpty()) {
-            throw new IllegalArgumentException("refreshToken이 비어있습니다");
+        String refreshToken = httpRequest.getHeader("REFRESH_TOKEN");
+        if (refreshToken != null) {
+            memberService.logout(refreshToken);
         }
 
-        try {
-            String category = jwtUtil.getCategory(refresh);
-            if (!REFRESH_TOKEN.equals(category)) {
-                throw new IllegalArgumentException("refreshToken 이 아닙니다.");
-            }
-
-            String username = jwtUtil.getUsername(refresh);
-
-            refreshRepository.deleteByUsername(username);
-
-        } catch (JwtException e) {
-            throw new IllegalArgumentException(e.getMessage());
-        }
-
-        response.setStatus(HttpServletResponse.SC_OK);
+        httpResponse.setStatus(HttpServletResponse.SC_OK);
     }
 }

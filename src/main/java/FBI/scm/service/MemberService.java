@@ -8,8 +8,6 @@ import FBI.scm.entity.MemberEntity;
 import FBI.scm.entity.RefreshToken;
 import FBI.scm.enums.MemberRole;
 import FBI.scm.handler.exception.JoinException;
-import FBI.scm.handler.exception.LoginException;
-import FBI.scm.jwt.JwtLoginFilter;
 import FBI.scm.jwt.JwtUtil;
 import FBI.scm.repository.MemberRepository;
 import FBI.scm.repository.RefreshTokenRepository;
@@ -20,11 +18,12 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import static org.springframework.security.config.Elements.REMEMBER_ME;
 
 @Service
 @RequiredArgsConstructor
 public class MemberService {
+
+    private static final String REFRESH_TOKEN = "REFRESH_TOKEN";
 
     private final MemberRepository memberRepository;
     private final RefreshTokenRepository refreshTokenRepository;
@@ -32,7 +31,7 @@ public class MemberService {
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
 
-    public void joinService(JoinDto joinDto){
+    public void join(JoinDto joinDto){
 
         if(memberRepository.existsByUsername(joinDto.getUsername())){
             throw new JoinException("이미 존재하는 사용자입니다.");
@@ -52,47 +51,48 @@ public class MemberService {
         memberRepository.save(memberEntity);
     }
 
-    // 로그인 서비스
-    public TokenDto loginService(LoginDto loginDto) {
-        // 로그인 시도
-        UsernamePasswordAuthenticationToken authenticationToken =
-                new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword());
+    public TokenDto login(LoginDto loginDto) {
+        // 사용자 입력값을 기반으로 인증 토큰 생성
+        String username = loginDto.getUsername();
+        String password = loginDto.getPassword();
+        Boolean rememberMe = loginDto.getRememberMe();
 
-        // AuthenticationManager로 인증 처리
+        // Username과 Password 기반으로 인증 토큰 생성 및 인증 시도
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, password, null);
         Authentication authentication = authenticationManager.authenticate(authenticationToken);
 
-        // 인증이 성공하면 사용자 정보를 기반으로 토큰 생성
-        String username = loginDto.getUsername();
-        String role = authentication.getAuthorities().iterator().next().getAuthority();
+        // 인증 성공 후 액세스 토큰과 리프레시 토큰 생성
+        CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+        String role = customUserDetails.getAuthorities().iterator().next().getAuthority();
 
         // JWT 토큰 생성
         String accessToken = jwtUtil.createAccessToken(username, role);
         String refreshToken = jwtUtil.createRefreshToken(username, role);
 
-        // 토큰 반환
+        // RefreshToken 저장
+        RefreshToken refreshTokenEntity = new RefreshToken(username, refreshToken, rememberMe);
+        jwtUtil.saveRefreshToken(refreshTokenEntity);
+
+        // 토큰 DTO 반환
         return new TokenDto(accessToken, refreshToken);
     }
 
-    public void logoutService(String refreshToken) {
-        if (refreshToken == null || refreshToken.trim().isEmpty()) {
-            throw new IllegalArgumentException("refeshToken이 비어있습니다.");
+    public void logout(String refresh) {
+        if (refresh == null || refresh.trim().isEmpty()) {
+            throw new IllegalArgumentException("refreshToken이 비어있습니다");
         }
 
         try {
-            // refreshToken 유효성 확인
-            String category = jwtUtil.getCategory(refreshToken);
-            if (!"REFRESH_TOKEN".equals(category)) {
-                throw new IllegalArgumentException("refreshToken이 아닙니다.");
+            String category = jwtUtil.getCategory(refresh);
+            if (!REFRESH_TOKEN.equals(category)) {
+                throw new IllegalArgumentException("refreshToken 이 아닙니다.");
             }
 
-            // refreshToken에서 username 추출
-            String username = jwtUtil.getUsername(refreshToken);
-
-            // DB에서 해당 username의 refreshToken 삭제
+            String username = jwtUtil.getUsername(refresh);
             refreshTokenRepository.deleteByUsername(username);
 
-        } catch (JwtException | IllegalArgumentException e) {
-            throw new IllegalArgumentException("로그아웃 실패: " + e.getMessage());
+        } catch (JwtException e) {
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
 }
