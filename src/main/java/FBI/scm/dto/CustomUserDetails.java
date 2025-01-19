@@ -37,10 +37,6 @@ public class CustomUserDetails implements UserDetails {
         return memberEntity.getUsername();
     }
 
-    public Enum getRole(){
-        return memberEntity.getRole();
-    }
-
     @Override
     public boolean isAccountNonExpired() {
         return true;

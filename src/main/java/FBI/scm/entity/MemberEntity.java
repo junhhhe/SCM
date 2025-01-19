@@ -30,5 +30,5 @@ public class MemberEntity extends BaseEntity{
     private MemberRole role;
 
     @Enumerated(EnumType.STRING)
-    private MemberStatus status; // 사용자 상태 (ACTIVATE, INACTIVE 등)
+    private MemberStatus status;
 }

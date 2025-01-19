@@ -6,7 +6,7 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class ErrorResponse {
-    int errorType;
-    String errorMessage;
-    String additionalInfo;
+    private int errorType;
+    private String errorMessage;
+    private String additionalInfo;
 }

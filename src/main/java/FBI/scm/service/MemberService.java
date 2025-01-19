@@ -7,7 +7,9 @@ import FBI.scm.dto.TokenDto;
 import FBI.scm.entity.MemberEntity;
 import FBI.scm.entity.RefreshToken;
 import FBI.scm.enums.MemberRole;
+import FBI.scm.handler.exception.InvalidTokenException;
 import FBI.scm.handler.exception.JoinException;
+import FBI.scm.handler.exception.LoginException;
 import FBI.scm.jwt.JwtUtil;
 import FBI.scm.repository.MemberRepository;
 import FBI.scm.repository.RefreshTokenRepository;
@@ -52,47 +54,53 @@ public class MemberService {
     }
 
     public TokenDto login(LoginDto loginDto) {
-        // 사용자 입력값을 기반으로 인증 토큰 생성
-        String username = loginDto.getUsername();
-        String password = loginDto.getPassword();
-        Boolean rememberMe = loginDto.getRememberMe();
+        try {
+            // 사용자 입력값을 기반으로 인증 토큰 생성
+            String username = loginDto.getUsername();
+            String password = loginDto.getPassword();
+            Boolean rememberMe = loginDto.getRememberMe();
 
-        // Username과 Password 기반으로 인증 토큰 생성 및 인증 시도
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, password, null);
-        Authentication authentication = authenticationManager.authenticate(authenticationToken);
+            // Username과 Password 기반으로 인증 토큰 생성 및 인증 시도
+            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, password, null);
+            Authentication authentication = authenticationManager.authenticate(authenticationToken);
 
-        // 인증 성공 후 액세스 토큰과 리프레시 토큰 생성
-        CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
-        String role = customUserDetails.getAuthorities().iterator().next().getAuthority();
+            // 인증 성공 후 액세스 토큰과 리프레시 토큰 생성
+            CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+            String role = customUserDetails.getAuthorities().iterator().next().getAuthority();
 
-        // JWT 토큰 생성
-        String accessToken = jwtUtil.createAccessToken(username, role);
-        String refreshToken = jwtUtil.createRefreshToken(username, role);
+            // JWT 토큰 생성
+            String accessToken = jwtUtil.createAccessToken(username, role);
+            String refreshToken = jwtUtil.createRefreshToken(username, role);
 
-        // RefreshToken 저장
-        RefreshToken refreshTokenEntity = new RefreshToken(username, refreshToken, rememberMe);
-        jwtUtil.saveRefreshToken(refreshTokenEntity);
+            // RefreshToken 저장
+            RefreshToken refreshTokenEntity = new RefreshToken(username, refreshToken, rememberMe);
+            jwtUtil.saveRefreshToken(refreshTokenEntity);
 
-        // 토큰 DTO 반환
-        return new TokenDto(accessToken, refreshToken);
+            // 토큰 DTO 반환
+            return new TokenDto(accessToken, refreshToken);
+        } catch(Exception e){
+            throw new LoginException("로그인 실패. 아이디 또는 비밀번호를 확인하세요.");
+        }
     }
 
     public void logout(String refresh) {
         if (refresh == null || refresh.trim().isEmpty()) {
-            throw new IllegalArgumentException("refreshToken이 비어있습니다");
+            throw new InvalidTokenException("refreshToken이 비어있습니다");
         }
 
         try {
             String category = jwtUtil.getCategory(refresh);
             if (!REFRESH_TOKEN.equals(category)) {
-                throw new IllegalArgumentException("refreshToken 이 아닙니다.");
+                throw new InvalidTokenException("refreshToken 이 아닙니다.");
             }
 
             String username = jwtUtil.getUsername(refresh);
             refreshTokenRepository.deleteByUsername(username);
 
         } catch (JwtException e) {
-            throw new IllegalArgumentException(e.getMessage());
+            throw new InvalidTokenException("유효하지 않은 토큰입니다: " + e.getMessage());
+        } catch (Exception e) {
+            throw new InvalidTokenException("로그아웃 중 오류가 발생했습니다: " + e.getMessage());
         }
     }
 }

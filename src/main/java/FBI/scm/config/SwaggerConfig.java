@@ -1,7 +1,5 @@
 package FBI.scm.config;
 
-
-import FBI.scm.jwt.JwtUtil;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.models.Components;
@@ -20,7 +18,7 @@ import org.springframework.context.annotation.Configuration;
         )
 )
 @Configuration
-public class SwaggerConfig {
+public class SwaggerConfig{
 
     private static final String BEARER_TOKEN_PREFIX = "Bearer";
 
