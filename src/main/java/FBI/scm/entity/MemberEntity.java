@@ -1,7 +1,6 @@
 package FBI.scm.entity;
 
 import FBI.scm.enums.MemberRole;
-import FBI.scm.enums.MemberStatus;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -28,7 +27,4 @@ public class MemberEntity extends BaseEntity{
 
     @Enumerated(EnumType.STRING)
     private MemberRole role;
-
-    @Enumerated(EnumType.STRING)
-    private MemberStatus status;
 }

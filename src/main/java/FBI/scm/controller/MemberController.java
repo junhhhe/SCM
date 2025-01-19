@@ -27,6 +27,7 @@ public class MemberController {
     @PostMapping("/join")
     @Operation(summary = "회원가입 API")
     public ResponseEntity<BasicResponse<String>> join(@RequestBody JoinDto joinDto) {
+        memberService.join(joinDto);
         BasicResponse<String> response = new BasicResponse<>(true, "회원가입 성공", null);
         return ResponseEntity.ok(response);
     }

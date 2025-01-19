@@ -3,7 +3,6 @@ package FBI.scm.jwt;
 import FBI.scm.dto.ReissueDto;
 import FBI.scm.dto.TokenDto;
 import FBI.scm.entity.RefreshToken;
-import FBI.scm.enums.MemberStatus;
 import FBI.scm.handler.UnAuthorizedException;
 import FBI.scm.repository.MemberRepository;
 import FBI.scm.repository.RefreshTokenRepository;
@@ -134,13 +133,6 @@ public class JwtUtil {
                 refreshTokenRepository.deleteById(storedRefreshToken.getId());
                 throw new UnAuthorizedException("다른 환경에서 로그인한 이력이 있어 재인증이 필요합니다.");
             }
-
-            // 사용자 활성화 상태 확인
-            memberRepository.findByUsernameAndStatus(username, MemberStatus.ACTIVATE)
-                    .orElseThrow(() -> {
-                        refreshTokenRepository.deleteById(storedRefreshToken.getId());
-                        throw new UnAuthorizedException("승인되지 않은 사용자입니다.");
-                    });
 
             // 새로운 액세스 토큰 및 리프레시 토큰 생성
             String newAccessToken = createAccessToken(username, "USER_ROLE");

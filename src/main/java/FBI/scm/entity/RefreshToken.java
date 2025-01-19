@@ -22,9 +22,9 @@ public class RefreshToken extends BaseEntity {
     private String username;
 
     @Column(name = "refreshToken", nullable = false)
-    private String refreshToken; // 리프레시 토큰 값
+    private String refreshToken;
 
-    private boolean rememberMe; // rememberMe 설정 여부
+    private boolean rememberMe;
 
     @Column(name = "expiresAt")
     private LocalDateTime expiresAt;
